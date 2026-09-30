@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyd
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.venv/
+venv/
+env/
+
+# Dynamo y Revit: temporales y copias de seguridad
+*.dyn.backup
+*.rvt.*
+*.rfa.*
+*.0001.rvt
+*.0001.rfa
+Journal.*.txt
+revit_temp/
+
+# Archivos temporales y registros
+*.tmp
+*.temp
+*.log
+~$*
+
+# Editores
+.vscode/
+.idea/
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+desktop.ini
