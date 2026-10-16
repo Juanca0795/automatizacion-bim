@@ -1,5 +1,16 @@
-# CONFIGURACIÓN: nombre exacto de la capa cargada en QGIS.
+# ==========================================
+# CONFIGURACIÓN
+# ==========================================
+
+# OPCIÓN 1: nombre exacto de una capa cargada en QGIS.
 CAPA_ENTRADA = "Paquete 33"
+
+# OPCIÓN 2: archivo vectorial externo. Si se indica, tiene prioridad.
+RUTA_ENTRADA = None
+# Ejemplo: r"C:\Proyectos\archivo.shp"
+
+# True muestra los campos candidatos y termina sin iniciar una edición.
+SOLO_PREVISUALIZAR = False
 
 """Detecta campos sin información y prepara su eliminación en una capa de QGIS.
 
@@ -9,6 +20,53 @@ Ejecutar con runpy desde la consola Python de QGIS (ver README.md).
 
 from decimal import Decimal, InvalidOperation
 from numbers import Number
+import os
+
+
+def resolver_capa_entrada(
+    ruta_entrada,
+    capa_entrada,
+    proyecto,
+    crear_capa_vectorial,
+    es_capa_vectorial_valida,
+    existe_archivo=os.path.isfile,
+):
+    """Resuelve una capa cargada o crea una capa desde un archivo vectorial.
+
+    La ruta externa, si se especifica, tiene prioridad y nunca provoca una
+    alternativa silenciosa a la capa cargada cuando es inválida.
+    """
+    if ruta_entrada is not None:
+        ruta = os.fspath(ruta_entrada).strip()
+        if not ruta:
+            raise RuntimeError("RUTA_ENTRADA está vacía; indica un archivo vectorial válido.")
+        if not existe_archivo(ruta):
+            raise RuntimeError("No existe el archivo indicado en RUTA_ENTRADA: {!r}.".format(ruta))
+
+        nombre_archivo = ruta.replace("\\", "/").rsplit("/", 1)[-1]
+        nombre_capa = os.path.splitext(nombre_archivo)[0]
+        capa = crear_capa_vectorial(ruta, nombre_capa, "ogr")
+        if not es_capa_vectorial_valida(capa):
+            raise RuntimeError(
+                "El archivo no se pudo cargar como capa vectorial compatible con OGR: {!r}."
+                .format(ruta)
+            )
+        return capa, True
+
+    if not isinstance(capa_entrada, str) or not capa_entrada.strip():
+        raise RuntimeError(
+            "Configura RUTA_ENTRADA o indica en CAPA_ENTRADA el nombre de una capa cargada."
+        )
+    capas = proyecto.mapLayersByName(capa_entrada)
+    if len(capas) != 1:
+        raise RuntimeError(
+            "Se necesita exactamente una capa cargada con el nombre {!r}; encontradas: {}."
+            .format(capa_entrada, len(capas))
+        )
+    capa = capas[0]
+    if not es_capa_vectorial_valida(capa):
+        raise RuntimeError("La capa {!r} debe ser vectorial y válida.".format(capa_entrada))
+    return capa, False
 
 
 def valor_es_invalido(valor, nulo_qgis=None):
@@ -95,15 +153,14 @@ def ejecutar():
     from qgis.core import NULL, Qgis, QgsProject, QgsVectorDataProvider, QgsVectorLayer
     from qgis.PyQt.QtWidgets import QMessageBox
 
-    capas = QgsProject.instance().mapLayersByName(CAPA_ENTRADA)
-    if len(capas) != 1:
-        raise RuntimeError(
-            "Se necesita exactamente una capa cargada con el nombre {!r}; encontradas: {}."
-            .format(CAPA_ENTRADA, len(capas))
-        )
-    capa = capas[0]
-    if not isinstance(capa, QgsVectorLayer) or not capa.isValid():
-        raise RuntimeError("La capa debe ser vectorial y válida.")
+    proyecto = QgsProject.instance()
+    capa, es_archivo_externo = resolver_capa_entrada(
+        RUTA_ENTRADA,
+        CAPA_ENTRADA,
+        proyecto,
+        QgsVectorLayer,
+        lambda candidata: isinstance(candidata, QgsVectorLayer) and candidata.isValid(),
+    )
     if capa.isReadOnly() or capa.isEditable():
         raise RuntimeError(
             "La capa es de solo lectura o ya tiene una sesión de edición. "
@@ -151,6 +208,9 @@ def ejecutar():
     if not indices_candidatos:
         print("No se inició ninguna edición.")
         return
+    if SOLO_PREVISUALIZAR:
+        print("Previsualización solicitada. No se modificó la capa.")
+        return
 
     mensaje = (
         "Se preparará la eliminación de estos campos en {!r}:\n\n{}\n\n"
@@ -159,7 +219,7 @@ def ejecutar():
     respuesta = QMessageBox.question(
         None,
         "Confirmar limpieza de campos",
-        mensaje.format(CAPA_ENTRADA, "\n".join(nombres_candidatos)),
+        mensaje.format(capa.name(), "\n".join(nombres_candidatos)),
         QMessageBox.Yes | QMessageBox.No,
         QMessageBox.No,
     )
@@ -167,7 +227,21 @@ def ejecutar():
         print("Operación cancelada. No se modificó la capa.")
         return
 
-    if not capa.startEditing():
+    capa_agregada_al_proyecto = False
+    if es_archivo_externo:
+        if proyecto.addMapLayer(capa) is None:
+            raise RuntimeError("QGIS no pudo añadir la capa externa al proyecto para revisarla.")
+        capa_agregada_al_proyecto = True
+
+    try:
+        edicion_iniciada = capa.startEditing()
+    except Exception as error:
+        if capa_agregada_al_proyecto:
+            proyecto.removeMapLayer(capa.id())
+        raise RuntimeError("QGIS no pudo iniciar la edición: {}".format(error)) from error
+    if not edicion_iniciada:
+        if capa_agregada_al_proyecto:
+            proyecto.removeMapLayer(capa.id())
         raise RuntimeError("QGIS no pudo iniciar la edición; no se modificó la capa.")
     try:
         if not capa.deleteAttributes(indices_candidatos):
@@ -184,6 +258,8 @@ def ejecutar():
                 "Falló la reversión de la edición. Revisa la capa manualmente; "
                 "no se puede garantizar su estado."
             ) from error
+        if capa_agregada_al_proyecto:
+            proyecto.removeMapLayer(capa.id())
         raise RuntimeError("Se revirtió la edición: {}".format(error)) from error
 
     print("Campos preparados para eliminar: {}".format(", ".join(nombres_candidatos)))
@@ -194,5 +270,5 @@ def ejecutar():
 if __name__ == "__main__":
     try:
         ejecutar()
-    except (RuntimeError, ValueError) as error:
+    except (OSError, RuntimeError, TypeError, ValueError) as error:
         print("Limpieza detenida: {}".format(error))
