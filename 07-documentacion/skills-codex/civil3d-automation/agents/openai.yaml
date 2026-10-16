@@ -1,0 +1,4 @@
+interface:
+  display_name: "Automatización Civil 3D"
+  short_description: "Crear y depurar automatizaciones para Civil 3D"
+  default_prompt: "Usa $civil3d-automation para desarrollar o corregir mi automatización de Civil 3D."
