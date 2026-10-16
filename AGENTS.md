@@ -28,11 +28,24 @@ Esta convención aplica globalmente a todos los proyectos y tecnologías del rep
 
 - Agrupa al inicio del código los valores que el usuario deba cambiar o léelos de un archivo de configuración claramente identificado. Usa nombres idiomáticos para el lenguaje y describe qué valores debe editar. Por ejemplo: `RUTA_SCRIPT`, `RUTA_ENTRADA`, `RUTA_SALIDA`, `CARPETA_TRABAJO`, `CAPA_ENTRADA`, `NOMBRE_ARCHIVO` y `NOMBRE_MODELO`; adapta su estilo a cada lenguaje.
 - Evita dispersar rutas, nombres y valores modificables entre funciones y comandos. Las funciones deben recibir esos valores como parámetros o depender de la configuración definida de forma explícita.
-- Separa visualmente las secciones **CONFIGURACIÓN** y **EJECUCIÓN**. En la documentación, ofrece un bloque completo listo para copiar en la consola, terminal o aplicación anfitriona; coloca al principio las rutas y parámetros editables y señala cuáles se deben reemplazar.
-- Usa sintaxis de rutas compatible con el lenguaje, el sistema operativo y la aplicación anfitriona. Valida entradas y permisos antes de escribir. No supongas rutas locales ni sobrescribas o elimines datos existentes sin autorización.
+- Separa visualmente las secciones **CONFIGURACIÓN** y **EJECUCIÓN**. En la documentación, ofrece el método directo listo para copiar y ejecutar en la aplicación anfitriona cuando esté disponible. Si hace falta ejecutar un archivo externo, proporciona también un bloque completo con las rutas y parámetros editables al inicio e indica cuáles debe reemplazar el usuario.
+- Solicita rutas solo si la operación necesita leer archivos externos, exportar resultados, acceder a recursos que no estén cargados o ejecutar un archivo guardado. Usa sintaxis compatible con el lenguaje, el sistema operativo y la aplicación anfitriona; valida entradas y permisos antes de escribir. No supongas rutas locales ni sobrescribas o elimines datos existentes sin autorización.
 - No guardes credenciales o secretos en el código, ejemplos ni archivos de configuración versionados. Usa el mecanismo seguro disponible para el entorno.
 - En entornos visuales como Dynamo, agrupa los valores configurables en nodos de entrada claramente nombrados, con unidades, formato y valores permitidos documentados. Aplica el mismo principio a los controles de entrada de otras aplicaciones.
 - Cuando no se necesiten rutas de archivos, centraliza de igual forma las demás opciones que el usuario deba ajustar.
+
+## Ejecución directa de scripts en aplicaciones de ingeniería
+
+Aplica este estándar a todos los scripts nuevos y a los existentes cuando sean revisados o modificados. No alteres la lógica funcional de un script existente solo para adoptar esta convención.
+
+- Prioriza código completo, organizado y listo para copiar y ejecutar dentro del programa correspondiente, siempre que su API o entorno de scripting lo permita. Da prioridad a los modelos, documentos, dibujos, libros y capas que ya estén abiertos o cargados.
+- Aplica el criterio según la tecnología disponible: Python/PyQGIS en QGIS; pyRevit, Revit API o Dynamo en Revit; Dynamo o API .NET en Civil 3D; AutoLISP o API .NET en AutoCAD; VBA u Office Scripts en Excel; y mecanismos equivalentes en otros programas.
+- No pidas rutas absolutas cuando la API permita acceder directamente al documento activo o a los elementos cargados. Las rutas solo son obligatorias para importar archivos externos, exportar resultados, acceder a recursos no cargados o ejecutar archivos guardados.
+- Agrupa todos los parámetros editables al inicio del código bajo **CONFIGURACIÓN**, con nombres claros y compatibles con el lenguaje, por ejemplo `CAPA_ENTRADA`, `DOCUMENTO_ACTIVO` o `NOMBRE_ELEMENTO`. Separa de forma identificable la configuración de la ejecución.
+- Valida que existan los documentos, capas, modelos o elementos esperados y que sean del tipo requerido antes de operar. Muestra mensajes claros de inicio, resultado, advertencia y error.
+- Para QGIS, permite la ejecución directa desde la consola Python, usa `QgsProject.instance()` para el proyecto actual y `mapLayersByName(CAPA_ENTRADA)` cuando corresponda. No exijas la ruta de un SHP si su capa ya está cargada. No exijas `RUTA_SCRIPT` cuando el usuario pegará el código completo en la consola o el editor de QGIS.
+- En los README de cada script, documenta su objetivo y función, requisitos y programas compatibles, parámetros editables, ejecución directa y, cuando corresponda, ejecución alternativa como archivo externo, ejemplos, advertencias y recomendaciones de seguridad.
+- Antes de modificar o eliminar información, valida entradas y describe el efecto. Usa respaldo, previsualización o confirmación según el riesgo; no inicies operaciones destructivas automáticamente sin autorización. Conserva las condiciones funcionales existentes salvo que el usuario solicite cambiarlas.
 
 ## Compatibilidad BIM
 
