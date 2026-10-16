@@ -5,9 +5,18 @@ __pycache__/
 *.egg-info/
 .pytest_cache/
 .mypy_cache/
+.ruff_cache/
+.tox/
 .venv/
 venv/
 env/
+__pypackages__/
+build/
+dist/
+htmlcov/
+.coverage
+.coverage.*
+pip-wheel-metadata/
 
 # Dynamo y Revit: temporales y copias de seguridad
 *.dyn.backup
@@ -17,6 +26,42 @@ env/
 *.0001.rfa
 Journal.*.txt
 revit_temp/
+
+# .NET / Visual Studio
+**/bin/
+**/obj/
+.vs/
+*.user
+*.suo
+
+# Node.js / TypeScript
+node_modules/
+.npm/
+.yarn/cache/
+.yarn/unplugged/
+.pnp.*
+coverage/
+*.tsbuildinfo
+
+# Herramientas BIM y CAD: temporales, copias y bloqueos
+*.tmp.*
+*.dwl
+*.dwl2
+*.sv$
+*.ac$
+*.rvt.lck
+*.rfa.lck
+*.ifc~
+
+# QGIS: artefactos locales de proyecto
+*.qgz~
+*.qgs~
+*.qgd
+
+# Archivos locales de entorno y secretos
+.env
+.env.*
+!.env.example
 
 # Archivos temporales y registros
 *.tmp
