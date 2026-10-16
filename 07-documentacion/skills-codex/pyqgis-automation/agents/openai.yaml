@@ -1,0 +1,4 @@
+interface:
+  display_name: "Automatización PyQGIS"
+  short_description: "Desarrollar y depurar scripts seguros para QGIS"
+  default_prompt: "Usa $pyqgis-automation para corregir mi script de QGIS y trabajar con las capas del proyecto actual."
