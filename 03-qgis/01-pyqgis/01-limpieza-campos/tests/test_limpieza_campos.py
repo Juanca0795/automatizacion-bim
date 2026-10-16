@@ -7,7 +7,8 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from limpieza_campos import (
-    clasificar_campos, indices_que_permite_eliminar, valor_es_invalido,
+    clasificar_campos, indices_que_permite_eliminar, resolver_capa_entrada,
+    valor_es_invalido,
 )
 
 
@@ -115,6 +116,100 @@ class ClasificacionCamposTests(unittest.TestCase):
         evaluables, protegidos = indices_que_permite_eliminar(Capa(), Proveedor())
         self.assertEqual(evaluables, [0])
         self.assertEqual(protegidos, ["fid", "calculado", "obligatorio", "unido"])
+
+
+class ResolucionEntradaTests(unittest.TestCase):
+    class Proyecto:
+        def __init__(self, capas):
+            self.capas = capas
+            self.consultas = []
+
+        def mapLayersByName(self, nombre):
+            self.consultas.append(nombre)
+            return self.capas
+
+    class Capa:
+        def __init__(self, valida=True):
+            self.valida = valida
+
+        def isValid(self):
+            return self.valida
+
+    def resolver(self, ruta, nombre, proyecto, constructor=None, existe=None):
+        return resolver_capa_entrada(
+            ruta,
+            nombre,
+            proyecto,
+            constructor or (lambda *args: self.Capa()),
+            lambda capa: isinstance(capa, self.Capa) and capa.isValid(),
+            existe or (lambda _ruta: True),
+        )
+
+    def test_usa_capa_cargada_sin_consultar_rutas(self):
+        capa = self.Capa()
+        proyecto = self.Proyecto([capa])
+
+        resultado, es_externa = self.resolver(None, "Paquete 33", proyecto)
+
+        self.assertIs(resultado, capa)
+        self.assertFalse(es_externa)
+        self.assertEqual(proyecto.consultas, ["Paquete 33"])
+
+    def test_ruta_externa_tiene_prioridad_sobre_capa_cargada(self):
+        cargada = self.Capa()
+        externa = self.Capa()
+        proyecto = self.Proyecto([cargada])
+        llamadas_constructor = []
+
+        def constructor(*args):
+            llamadas_constructor.append(args)
+            return externa
+
+        resultado, es_externa = self.resolver(
+            r"C:\Proyectos\archivo.shp", "Paquete 33", proyecto, constructor
+        )
+
+        self.assertIs(resultado, externa)
+        self.assertTrue(es_externa)
+        self.assertEqual(
+            llamadas_constructor,
+            [(r"C:\Proyectos\archivo.shp", "archivo", "ogr")],
+        )
+        self.assertEqual(proyecto.consultas, [])
+
+    def test_ruta_inexistente_se_rechaza_sin_fallback(self):
+        proyecto = self.Proyecto([self.Capa()])
+
+        with self.assertRaisesRegex(RuntimeError, "No existe el archivo"):
+            self.resolver("inexistente.shp", "Paquete 33", proyecto, existe=lambda _: False)
+        self.assertEqual(proyecto.consultas, [])
+
+    def test_archivo_no_vectorial_o_invalido_se_rechaza(self):
+        proyecto = self.Proyecto([])
+
+        with self.assertRaisesRegex(RuntimeError, "no se pudo cargar como capa vectorial"):
+            self.resolver(
+                "tabla.csv", "Paquete 33", proyecto,
+                constructor=lambda *_: self.Capa(valida=False),
+            )
+
+    def test_capa_cargada_ausente_o_duplicada_se_rechaza(self):
+        for capas in ([], [self.Capa(), self.Capa()]):
+            with self.subTest(cantidad=len(capas)):
+                proyecto = self.Proyecto(capas)
+                with self.assertRaisesRegex(RuntimeError, "exactamente una capa"):
+                    self.resolver(None, "Paquete 33", proyecto)
+
+    def test_capa_cargada_no_vectorial_o_invalida_se_rechaza(self):
+        for capa in (object(), self.Capa(valida=False)):
+            with self.subTest(capa=capa):
+                proyecto = self.Proyecto([capa])
+                with self.assertRaisesRegex(RuntimeError, "debe ser vectorial y válida"):
+                    self.resolver(None, "Paquete 33", proyecto)
+
+    def test_ninguna_opcion_configurada_se_rechaza(self):
+        with self.assertRaisesRegex(RuntimeError, "Configura RUTA_ENTRADA"):
+            self.resolver(None, " ", self.Proyecto([]))
 
 
 if __name__ == "__main__":
