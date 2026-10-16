@@ -1,3 +1,4 @@
+# CONFIGURACIÓN: nombre exacto de la capa cargada en QGIS.
 CAPA_ENTRADA = "Paquete 33"
 
 """Detecta campos sin información y prepara su eliminación en una capa de QGIS.
