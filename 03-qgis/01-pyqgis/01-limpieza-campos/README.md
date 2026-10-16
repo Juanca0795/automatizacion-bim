@@ -11,15 +11,16 @@ Script para la consola Python de QGIS que identifica campos sin información en 
 ## Uso
 
 1. Trabaja sobre una copia de la fuente de datos o crea una copia de seguridad antes de guardar cambios en QGIS.
-2. Abre `limpieza_campos.py` y cambia su primera línea, `CAPA_ENTRADA = "Paquete 33"`, por el nombre exacto de la capa cargada.
-3. En la consola Python de QGIS, ejecuta el archivo con una ruta real de tu equipo:
+2. Abre `limpieza_campos.py` y cambia `CAPA_ENTRADA = "Paquete 33"`, en la sección **CONFIGURACIÓN**, por el nombre exacto de la capa cargada en QGIS.
+3. En la consola Python de QGIS, copia y ejecuta este bloque. Sustituye `RUTA_SCRIPT` por la ubicación real del archivo Python en tu equipo:
 
    ```python
-   from pathlib import Path
-   import runpy
+   # CONFIGURACIÓN
+   RUTA_SCRIPT = r"C:\ruta\automatizacion-bim\03-qgis\01-pyqgis\01-limpieza-campos\limpieza_campos.py"
 
-   ruta_script = Path(r"C:\ruta\automatizacion-bim\03-qgis\01-pyqgis\01-limpieza-campos\limpieza_campos.py")
-   runpy.run_path(str(ruta_script), run_name="__main__")
+   # EJECUCIÓN
+   import runpy
+   runpy.run_path(RUTA_SCRIPT, run_name="__main__")
    ```
 
 4. Lee la lista de candidatos y campos conservados que aparece en la consola. Confirma el cuadro de diálogo solo si corresponde eliminar todos los candidatos.
