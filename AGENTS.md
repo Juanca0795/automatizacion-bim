@@ -22,6 +22,18 @@ Coloca cada cambio en su categoría. Si una categoría reúne proyectos distinto
 - Usa nombres descriptivos para funciones, clases y variables. Respeta las convenciones del lenguaje y del proyecto. Añade comentarios en español cuando expliquen decisiones técnicas relevantes, no para repetir lo que expresa el código.
 - Introduce dependencias solo cuando la tarea las necesite. Usa el gestor apropiado para el proyecto, respeta sus archivos de bloqueo y documenta versiones y pasos de instalación. No impongas dependencias globales a proyectos independientes.
 
+## Configuración centralizada de parámetros y rutas de ejecución
+
+Esta convención aplica globalmente a todos los proyectos y tecnologías del repositorio, incluidos Python, PyQGIS, Dynamo, pyRevit, Revit API, Civil 3D, C#, PowerShell, JavaScript, TypeScript y otros lenguajes o entornos que requieran entradas configurables.
+
+- Agrupa al inicio del código los valores que el usuario deba cambiar o léelos de un archivo de configuración claramente identificado. Usa nombres idiomáticos para el lenguaje y describe qué valores debe editar. Por ejemplo: `RUTA_SCRIPT`, `RUTA_ENTRADA`, `RUTA_SALIDA`, `CARPETA_TRABAJO`, `CAPA_ENTRADA`, `NOMBRE_ARCHIVO` y `NOMBRE_MODELO`; adapta su estilo a cada lenguaje.
+- Evita dispersar rutas, nombres y valores modificables entre funciones y comandos. Las funciones deben recibir esos valores como parámetros o depender de la configuración definida de forma explícita.
+- Separa visualmente las secciones **CONFIGURACIÓN** y **EJECUCIÓN**. En la documentación, ofrece un bloque completo listo para copiar en la consola, terminal o aplicación anfitriona; coloca al principio las rutas y parámetros editables y señala cuáles se deben reemplazar.
+- Usa sintaxis de rutas compatible con el lenguaje, el sistema operativo y la aplicación anfitriona. Valida entradas y permisos antes de escribir. No supongas rutas locales ni sobrescribas o elimines datos existentes sin autorización.
+- No guardes credenciales o secretos en el código, ejemplos ni archivos de configuración versionados. Usa el mecanismo seguro disponible para el entorno.
+- En entornos visuales como Dynamo, agrupa los valores configurables en nodos de entrada claramente nombrados, con unidades, formato y valores permitidos documentados. Aplica el mismo principio a los controles de entrada de otras aplicaciones.
+- Cuando no se necesiten rutas de archivos, centraliza de igual forma las demás opciones que el usuario deba ajustar.
+
 ## Compatibilidad BIM
 
 - Identifica la aplicación anfitriona, su versión, la API y el intérprete necesarios. Diferencia versiones requeridas de versiones verificadas; no afirmes compatibilidad sin evidencia.
