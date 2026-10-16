@@ -2,9 +2,9 @@
 
 ## Alcance y estructura
 
-- Trata este repositorio como un espacio compartido para proyectos de automatización BIM. Conserva las áreas existentes y coloca cada cambio en la carpeta de plataforma correspondiente.
+- Trata este repositorio como un espacio compartido para proyectos de automatización BIM. Conserva las siete categorías numeradas `01-revit` a `07-documentacion` y coloca cada cambio en la categoría correspondiente.
 - Antes de crear archivos, inspecciona el proyecto y sus instrucciones locales. No inventes automatizaciones, resultados, versiones compatibles ni requisitos.
-- Mantén las soluciones modulares: separa lógica independiente de los adaptadores que necesitan Revit, Dynamo, pyRevit, Civil 3D, QGIS, IFC u otros visores.
+- Mantén las soluciones modulares: separa lógica independiente de los adaptadores que necesitan Revit, Dynamo, pyRevit, Civil 3D, QGIS, IFC u otros visores. Los scripts generales, grafos Dynamo y ejemplos existentes pertenecen a `06-automatizaciones`; la documentación común, a `07-documentacion`.
 - Si un área contiene proyectos distintos, agrúpalos en subcarpetas con nombres claros y un README por proyecto. No añadas estructura vacía ni archivos de configuración sin una necesidad concreta.
 
 ## Cambios y dependencias
