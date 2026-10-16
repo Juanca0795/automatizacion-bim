@@ -1,0 +1,4 @@
+interface:
+  display_name: "Entorno BIM portable"
+  short_description: "Diagnosticar y recuperar el entorno BIM en Windows"
+  default_prompt: "Usa $bim-environment-setup para revisar y recuperar mi entorno BIM con vista previa."
