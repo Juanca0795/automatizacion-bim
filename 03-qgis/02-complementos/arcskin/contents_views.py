@@ -320,165 +320,38 @@ class RasterLegend(QObject):
                 QgsProject.instance().layerTreeRoot().findLayers()
                 if isinstance(node.layer(), QgsRasterLayer)]
 
-    def d~4Îﬁ-¢Gß≤⁄Óù∆≠y‘retch()
-    scroll = QScrollArea(objectName="ArcSkinRibbonPage",
-                         widgetResizable=True)
-    scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-    scroll.setWidget(page)
-    scroll.setMinimumHeight(page.sizeHint().height()
-                            + scroll.horizontalScrollBar().sizeHint().height())
-    return scroll
-
-
-def _addin_groups(bars):
-    """One group per plugin toolbar: Pro's Add-ins tab."""
-    groups = []
-    for bar in bars:
-        name = bar.objectName()
-        if name.startswith("m") and name not in ADDIN_HOSTS:
-            continue
-        buttons = []
-        for action in bar.actions():
-            if action.isSeparator() or not action.text():
+    def dress(self):
+        """Pro's "Value" label and short ramp on every raster legend."""
+        number = QgsNumericFormatContext()
+        for node in self._raster_nodes():
+            legend = self.model.layerLegendNodes(node)
+            ramps = [n for n in legend
+                     if isinstance(n, QgsColorRampLegendNode)]
+            if not ramps:
                 continue
-            button = QToolButton(autoRaise=True)
-            button.setDefaultAction(action)
-            button.setIconSize(QSize(LARGE, LARGE))
-            buttons.append((button, True))
-        if buttons:
-            groups.append((bar.windowTitle(), buttons))
-    return groups
+            for item in legend[:legend.index(ramps[0])]:
+                if not item.userLabel():
+                    item.setUserLabel(tr("Value"))
+            for ramp in ramps:
+                settings = ramp.settings()
+                if not (settings.maximumLabel() or settings.minimumLabel()):
+                    text = settings.numericFormat().formatDouble
+                    settings.setMaximumLabel(tr("High : {}").format(
+                        text(ramp.maximum(), number)))
+                    settings.setMinimumLabel(tr("Low : {}").format(
+                        text(ramp.minimum(), number)))
+                    ramp.setSettings(settings)
+                # Invalidating resets the size: shrink after it, then redraw.
+                # (QGIS 3 has the old name of the method.)
+                getattr(ramp, "invalidateDisplayData",
+                        ramp.invalidateMapBasedData)()
+                ramp.setIconSize(RAMP_PATCH)
+                ramp.dataChanged.emit()
 
-
-def _project_button(changes, win, toggle_action):
-    """Blue "Project" tab: project actions plus the hidden QGIS menu bar."""
-    button = QToolButton(objectName="ArcSkinProjectButton", text=tr("Project"))
-    menu = QMenu(button)
-    for name, icon in PROJECT_MENU:
-        if name.startswith("menu:"):
-            submenu = find_menu(win, name[5:])
-            if submenu:
-                menu.addMenu(submenu)
-            continue
-        action = find_action(win, name)
-        if action:
-            if icon:
-                restyle(changes, action, icon)
-            menu.addAction(action)
-    menu.addSeparator()
-    qgis_menu = menu.addMenu(tr("QGIS Menu"))
-    qgis_menu.addActions(win.menuBar().actions())
-    menu.addAction(toggle_action)
-    exit_action = find_action(win, "mActionExit")
-    if exit_action:
-        menu.addSeparator()
-        menu.addAction(exit_action)
-    button.setMenu(menu)
-    button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
-    return button
-
-
-def _drop_down_results(changes):
-    """Open the locator's results below the search box, not above it (as
-    they would from the status bar). Only once the search box is back in
-    the main window: Qt maps the anchor to the window and crashes (Qt 5)
-    when the box is not inside it."""
-    for widget in QApplication.allWidgets():
-        if widget.metaObject().className() == "QgsLocatorResultsView":
-            popup = sip.cast(widget.parent(), QgsFloatingWidget)
-            point = QgsFloatingWidget.AnchorPoint
-            changes.set(popup, "anchorPoint", point.TopLeft)
-            changes.set(popup, "anchorWidgetPoint", point.BottomLeft)
-
-
-class TitleRow(QWidget):
-    """Row above the ribbon, like Pro's title bar: Quick Access Toolbar and
-    project name on the left, QGIS's locator centred (Command Search),
-    messages on the right."""
-
-    def __init__(self, iface, changes):
-        super().__init__(objectName="ArcSkinTitleRow")
-        win = iface.mainWindow()
-        row = QHBoxLayout(self)
-        row.setContentsMargins(6, 2, 6, 2)
-        row.setSpacing(2)
-        for name in QUICK_ACCESS:
-            action = find_action(win, name)
-            if action:
-                button = QToolButton(autoRaise=True)
-                button.setDefaultAction(action)
-                button.setToolButtonStyle(
-                    Qt.ToolButtonStyle.ToolButtonIconOnly)
-                row.addWidget(button)
-        self.project = QLabel(objectName="ArcSkinProjectName")
-        row.addWidget(self.project)
-        row.addStretch(1)
-        self.locator = win.statusBar().findChild(QWidget, "LocatorWidget")
-        if self.locator:
-            changes.set(self.locator, "minimumWidth", 420)
-            changes.set(self.locator, "maximumWidth", 420)
-            row.addWidget(self.locator)  # moved out of the status bar
-            changes.add(lambda: iface.statusBarIface().addPermanentWidget(
-                self.locator, 0, QgsStatusBar.Anchor.AnchorLeft))
-        row.addStretch(1)
-        messages = find_action(win, "dock:MessageLog")
-        if messages:
-            button = QToolButton(autoRaise=True)
-            button.setDefaultAction(messages)
-            button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
-            row.addWidget(button)
-        project = QgsProject.instance()
-        for signal_name in ("readProject", "cleared", "fileNameChanged",
-                            "titleChanged"):
-            signal = getattr(project, signal_name, None)
-            if signal is not None:
-                signal.connect(self.show_project)
-        self.show_project()
-
-    def show_project(self, *_):
-        """Project title (or file name) as Pro shows the project's name."""
-        project = QgsProject.instance()
-        name = project.title() or project.baseName() or tr("Untitled")
-        self.project.setText(name)
-
-
-def build_ribbon(iface, changes, toggle_action):
-    """Hide the menu bar and toolbars and put the ribbon in their place.
-
-    Toolbar visibility is restored with the saved window state.
-    """
-    win = iface.mainWindow()
-    bars = [b for b in win.findChildren(QToolBar) if b.parent() is win]
-    for bar in bars:
-        bar.hide()
-    changes.set(win.menuBar(), "visible", False)
-    tabs = QTabWidget(objectName="ArcSkinRibbon")
-    tabs.setCornerWidget(_project_button(changes, win, toggle_action),
-                         Qt.Corner.TopLeftCorner)
-    for title, groups in RIBBON + [(tr("Add-ins"), None)]:
-        if groups is None:
-            built = _addin_groups(bars)
-        else:
-            built = []
-            for caption, items in groups:
-                buttons = [(b, item[1] == "L") for item in items
-                           if (b := _button(iface, changes, *item))]
-                if buttons:
-                    built.append((caption, buttons))
-        if built:
-            tabs.addTab(_tab(built), title)
-    ribbon = QToolBar("ArcSkin", win, objectName="ArcSkinRibbonBar")
-    ribbon.setMovable(False)
-    ribbon.setFloatable(False)
-    frame = QWidget()
-    stack = QVBoxLayout(frame)
-    stack.setContentsMargins(0, 0, 0, 0)
-    stack.setSpacing(0)
-    title = TitleRow(iface, changes)
-    stack.addWidget(title)
-    stack.addWidget(tabs)
-    ribbon.addWidget(frame)
-    win.addToolBar(Qt.ToolBarArea.TopToolBarArea, ribbon)
-    changes.add(lambda: (win.removeToolBar(ribbon), ribbon.deleteLater()))
-    if title.locator:
-        _drop_down_results(changes)
+    def stop(self):
+        self.model.rowsInserted.disconnect(self.timer.start)
+        self.model.modelReset.disconnect(self.timer.start)
+        self.timer.stop()
+        for node in self._raster_nodes():
+            self.model.refreshLayerLegend(node)
+        self.deleteLater()
